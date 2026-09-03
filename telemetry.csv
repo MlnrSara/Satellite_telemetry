@@ -1,0 +1,2 @@
+timestamp,battery_voltage_mV,system_current_mA,battery_temp_C,paneltemp_xp,paneltemp_xn,paneltemp_yp,paneltemp_yn,bus_3v3_voltage_mV,bus_3v3_current_mA,rx_rssi,rx_doppler,in_eclipse,in_safe_mode
+2026-09-03T20:26:57.261877,8140,206,9,-10.710499999999996,-8.037900000000008,-8.461999999999989,-8.5411,3280,43,181,160,True,False
