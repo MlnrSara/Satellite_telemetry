@@ -2,6 +2,7 @@ import json
 import re
 import datetime
 import math
+import pandas as pd
 
 def convert_panel_temp(raw_adc):
     """
@@ -174,17 +175,17 @@ def parse_funcube_frames(file_path):
                             "eps_photo_voltage_1_V": round(eps_pv1, 3),
                             "eps_photo_voltage_2_V": round(eps_pv2, 3),
                             "eps_photo_voltage_3_V": round(eps_pv3, 3),
-                            "eps_battery_voltage_V": round(eps_batt_v, 3),
-                            "eps_system_current_A": round(eps_sys_c, 3),
+                            "battery_voltage_mV": round(eps_batt_v * 1000, 1),
+                            "system_current_mA": round(eps_sys_c * 1000, 1),
+                            "battery_temp_C": eps_batt_t,
                             "eps_boost_temp_1_C": eps_boost_t1,
-                            "eps_battery_temp_C": eps_batt_t,
                             "bob_sun_x_raw": sun_x,
                             "bob_sun_y_raw": sun_y,
                             "bob_sun_z_raw": sun_z,
-                            "bob_panel_t_x_pos": panel_t_x_pos,
-                            "bob_panel_t_x_neg": panel_t_x_neg,
-                            "bob_panel_t_y_pos": panel_t_y_pos,
-                            "bob_panel_t_y_neg": panel_t_y_neg,
+                            "paneltemp_xp": panel_t_x_pos,
+                            "paneltemp_xn": panel_t_x_neg,
+                            "paneltemp_yp": panel_t_y_pos,
+                            "paneltemp_yn": panel_t_y_neg,
                             "bob_3v3_bus_mA": bob_3v3_bus_current_mA,
                             "bob_3v3_bus_v": bob_3v3_bus_voltage_V,
                             "rf_doppler": rf_doppler,
@@ -199,7 +200,7 @@ def parse_funcube_frames(file_path):
                             "ants_deploy_1": ants_deploy_1,
                             "ants_deploy_2": ants_deploy_2,
                             "ants_deploy_3": ants_deploy_3,
-                            "sw_in_eclipse": bool(in_eclipse),
+                            "in_eclipse": bool(in_eclipse),
                             "sw_in_safe_mode": bool(in_safe_mode)
                         })
                 except Exception as e:
@@ -209,6 +210,47 @@ def parse_funcube_frames(file_path):
 
     return telemetry_data
 
-parsed_records = parse_funcube_frames("decoded_frames.txt")
+def parse_satnogs_hex_blocks(file_path):
+    telemetry_data = []
+    base_time = datetime.datetime.now()
+    frame_count = 0
+
+    with open(file_path, 'r') as f:
+        content = f.read()
+
+    blocks = [b.strip() for b in content.split('\n\n') if b.strip()]
+
+    for block in blocks:
+        hex_string = block.replace('\n', ' ').replace(' ', '')
+        try:
+            frame = bytes.fromhex(hex_string)
+            if len(frame) >= 1 + 55:
+                rtt_bytes = frame[1:1+55]
+                rtt_bits = "".join(f"{b:08b}" for b in rtt_bytes)
+
+                eps_batt_v = extract_bits(rtt_bits, 64, 16) / 1000.0
+                eps_sys_c = extract_bits(rtt_bits, 80, 16) / 1000.0
+                eps_batt_t = to_signed_8bit(extract_bits(rtt_bits, 152, 8))
+
+                frame_timestamp = base_time + datetime.timedelta(seconds=frame_count * 5)
+                frame_count += 1
+
+                telemetry_data.append({
+                    "timestamp": frame_timestamp.isoformat(),
+                    "battery_voltage_mV": round(eps_batt_v * 1000, 1),
+                    "system_current_mA": round(eps_sys_c * 1000, 1),
+                    "battery_temp_C": eps_batt_t
+                })
+        except Exception as e:
+            print(f"Eroare la pachet: {e}")
+
+    return telemetry_data
+
+parsed_records = parse_satnogs_hex_blocks("decoded_frames.txt")
 for i, record in enumerate(parsed_records[:3]):
     print(f"Frame {i+1}: {json.dumps(record, indent=2)}")
+
+if parsed_records:
+    df = pd.DataFrame(parsed_records)
+    df.to_csv("telemetry.csv", index=False)
+    print(f"\nSalvat {len(parsed_records)} inregistrari in telemetry.csv")

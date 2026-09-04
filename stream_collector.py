@@ -6,7 +6,14 @@ from datetime import datetime
 
 CSV_FILE = "telemetry.csv"
 
-# Regex-uri pentru parametrii principali
+# ORA REALA de start a trecerii satelitului (schimb-o cu ora reala de pe pagina SatNOGS)
+PASS_START_TIME = datetime.fromisoformat("2026-09-04T05:59:54")
+script_start = datetime.now()
+
+def current_real_time():
+    elapsed = datetime.now() - script_start
+    return (PASS_START_TIME + elapsed).isoformat()
+
 patterns = {
     "battery_voltage_mV": re.compile(r"batteryvoltage\s*=\s*(\d+)"),
     "system_current_mA": re.compile(r"systemcurrent\s*=\s*(\d+)"),
@@ -23,21 +30,39 @@ patterns = {
     "in_safe_mode": re.compile(r"safemode\s*=\s*(True|False)")
 }
 
-# Inițializare fișier CSV dacă nu există
 if not os.path.exists(CSV_FILE):
     with open(CSV_FILE, "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(["timestamp"] + list(patterns.keys()))
 
 current_record = {}
+in_whole_orbit = False
 
-# Procesare stream linie cu linie
+def save_record(record):
+    if len(record) > 1:
+        with open(CSV_FILE, "a", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=["timestamp"] + list(patterns.keys()))
+            writer.writerow(record)
+        print(f"Salvata telemetrie la {record['timestamp']}")
+
 for line in sys.stdin:
     line = line.strip()
-    
-    # Detecție pachet nou
+
     if "Realtime telemetry:" in line:
-        current_record = {"timestamp": datetime.now().isoformat()}
+        current_record = {"timestamp": current_real_time()}
+        in_whole_orbit = False
+        continue
+
+    if "Whole orbit" in line or "High resolution" in line or "Fitter message" in line:
+        save_record(current_record)
+        current_record = {}
+        in_whole_orbit = True
+        continue
+
+    if in_whole_orbit and re.match(r'^Container:\s*$', line):
+        save_record(current_record)
+        current_record = {"timestamp": current_real_time()}
+        continue
 
     for key, pattern in patterns.items():
         m = pattern.search(line)
@@ -50,11 +75,9 @@ for line in sys.stdin:
             else:
                 current_record[key] = int(val)
 
-    # La finalul blocului RTT (sau la întâlnirea liniei de Whole Orbit), salvăm rândul
-    if ("Whole orbit" in line or "High resolution" in line or "Fitter message" in line) and "timestamp" in current_record:
-        if len(current_record) > 1:
-            with open(CSV_FILE, "a", newline="") as f:
-                writer = csv.DictWriter(f, fieldnames=["timestamp"] + list(patterns.keys()))
-                writer.writerow(current_record)
-            print(f"Salvată telemetrie la {current_record['timestamp']}")
+    if line.startswith("-> Packet from"):
+        save_record(current_record)
         current_record = {}
+        in_whole_orbit = False
+
+save_record(current_record)
