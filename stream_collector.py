@@ -6,7 +6,7 @@ from datetime import datetime
 
 CSV_FILE = "telemetry.csv"
 
-# ORA REALA de start a trecerii satelitului (schimb-o cu ora reala de pe pagina SatNOGS)
+# ORA REALA de start a trecerii satelitului
 PASS_START_TIME = datetime.fromisoformat("2026-09-04T05:59:54")
 script_start = datetime.now()
 
@@ -14,20 +14,35 @@ def current_real_time():
     elapsed = datetime.now() - script_start
     return (PASS_START_TIME + elapsed).isoformat()
 
+# Extended dictionary to parse almost all fields from the gr_satellites output
 patterns = {
     "battery_voltage_mV": re.compile(r"batteryvoltage\s*=\s*(\d+)"),
     "system_current_mA": re.compile(r"systemcurrent\s*=\s*(\d+)"),
+    "photocurrent_mA": re.compile(r"photocurrent\s*=\s*(\d+)"),
     "battery_temp_C": re.compile(r"batterytemp\s*=\s*(-?\d+)"),
     "paneltemp_xp": re.compile(r"paneltempX\+\s*=\s*([-\d\.]+)"),
     "paneltemp_xn": re.compile(r"paneltempX-\s*=\s*([-\d\.]+)"),
     "paneltemp_yp": re.compile(r"paneltempY\+\s*=\s*([-\d\.]+)"),
     "paneltemp_yn": re.compile(r"paneltempY-\s*=\s*([-\d\.]+)"),
+    "tempblackchassis": re.compile(r"tempblackchassis\s*=\s*([-\d\.]+)"),
+    "tempsilverchassis": re.compile(r"tempsilverchassis\s*=\s*([-\d\.]+)"),
+    "tempblackpanel": re.compile(r"tempblackpanel\s*=\s*([-\d\.]+)"),
+    "tempsilverpanel": re.compile(r"tempsilverpanel\s*=\s*([-\d\.]+)"),
     "bus_3v3_voltage_mV": re.compile(r"3v3voltage\s*=\s*(\d+)"),
     "bus_3v3_current_mA": re.compile(r"3v3current\s*=\s*(\d+)"),
+    "bus_5v_voltage_mV": re.compile(r"5voltage\s*=\s*(\d+)"),
     "rx_rssi": re.compile(r"rxrssi\s*=\s*(\d+)"),
     "rx_doppler": re.compile(r"rxdoppler\s*=\s*(\d+)"),
+    "rx_current_mA": re.compile(r"rxcurrent\s*=\s*([-\d\.]+)"),
+    "tx_3v3_current_mA": re.compile(r"tx3v3current\s*=\s*([-\d\.]+)"),
+    "tx_5v_current_mA": re.compile(r"tx5vcurrent\s*=\s*([-\d\.]+)"),
+    "pa_rev_pwr": re.compile(r"revpwr\s*=\s*([-\d\.]+)"),
+    "pa_fwd_pwr": re.compile(r"fwdpwr\s*=\s*([-\d\.]+)"),
+    "pa_board_temp": re.compile(r"boardtemp\s*=\s*([-\d\.]+)"),
+    "pa_board_curr": re.compile(r"boardcurr\s*=\s*([-\d\.]+)"),
     "in_eclipse": re.compile(r"eclipse\s*=\s*(True|False)"),
-    "in_safe_mode": re.compile(r"safemode\s*=\s*(True|False)")
+    "in_safe_mode": re.compile(r"safemode\s*=\s*(True|False)"),
+    "seq_number": re.compile(r"seqnumber\s*=\s*(\d+)")
 }
 
 if not os.path.exists(CSV_FILE):
@@ -39,6 +54,7 @@ current_record = {}
 in_whole_orbit = False
 
 def save_record(record):
+    # Ensure we actually captured data, not just the timestamp
     if len(record) > 1:
         with open(CSV_FILE, "a", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=["timestamp"] + list(patterns.keys()))
