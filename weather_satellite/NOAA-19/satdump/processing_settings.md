@@ -31,7 +31,9 @@ The input was the WAV file converted from the original SatNOGS OGG recording.
 
 The observation start time was manually entered:
 
-2024/05/11 10:19:01 UTC
+- 2024/05/11 10:19:01 UTC (Observation 9505836)
+- 2024/05/13 09:55:00 UTC (Observation 9518481)
+- 2024/05/13 09:57:00 UTC (Observation 9521580)
 
 This corresponds to the beginning of the selected SatNOGS observation.
 
@@ -68,6 +70,11 @@ The processing generated:
 - avhrr_3_rgb_10.8um_Thermal_IR.png
 - avhrr_3_rgb_10.8um_Thermal_IR_corrected.png
 
+The processing generated numerous raw and processed files for each pass. To demonstrate successful decoding, the most relevant visual products were selected for this repository:
+
+- `avhrr_3_rgb_NO_enhancement.png` (False Color composite)
+- `avhrr_3_APT_channel_A_corrected.png` (Geometrically corrected black & white visible channel)
+  
 Additional SatDump files included:
 
 - dataset.json
