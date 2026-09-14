@@ -23,10 +23,11 @@ NOAA-19 was selected as the weather satellite for the imagery part of the projec
 
 ---
 
-## SatNOGS Observation
+## SatNOGS Observations
 
-The recording used for this project was obtained from the SatNOGS network.
+The recordings used for this project were obtained from the SatNOGS network. In total, 3 distinct observations were processed.
 
+**Observation 1:**
 - Observation ID: 9505836
 - Satellite: NOAA-19
 - NORAD ID: 33591
@@ -37,7 +38,23 @@ The recording used for this project was obtained from the SatNOGS network.
 - Duration: 576 seconds
 - Observation status: Good
 
-The original recording was downloaded from the SatNOGS observation.
+**Observation 2:**
+- Observation ID: 9518481
+- Satellite: NOAA-19
+- NORAD ID: 33591
+- Frequency: 137.100 MHz
+- Start: 2024-05-13 09:55:00 UTC
+- Observation status: Good
+
+**Observation 3:**
+- Observation ID: 9521580
+- Satellite: NOAA-19
+- NORAD ID: 33591
+- Frequency: 137.100 MHz
+- Start: 2024-05-13 09:57:00 UTC
+- Observation status: Good
+
+The original recordings were downloaded from the SatNOGS observations.
 
 ---
 
